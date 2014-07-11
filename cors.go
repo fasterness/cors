@@ -144,7 +144,7 @@ func (cors *CorsHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Access-Control-Allow-Headers", cors.AllowedHeaders())
 		w.Header().Add("Access-Control-Allow-Credentials", cors.ALLOW_CREDENTIALS)
 		if cors.MAX_AGE > 0 {
-			w.Header().Add("Access-Control-Max-Age", fmt.Sprintf("%s", cors.MAX_AGE))
+			w.Header().Add("Access-Control-Max-Age", fmt.Sprintf("%9.f", cors.MAX_AGE))
 		}
 	}
 	cors.handler.ServeHTTP(w, req)
