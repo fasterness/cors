@@ -7,24 +7,21 @@ import (
 )
 
 type CorsHandler struct {
-	ALLOWED_METHODS []string
-	ALLOWED_ORIGINS []string
-	ALLOWED_HEADERS []string
-	handler         http.Handler
+	ALLOWED_METHODS   []string
+	ALLOWED_ORIGINS   []string
+	ALLOWED_HEADERS   []string
+	ALLOW_CREDENTIALS string
+	handler           http.Handler
 }
 
 func New(handler http.Handler) *CorsHandler {
 	return &CorsHandler{
-		ALLOWED_METHODS: []string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"},
-		ALLOWED_ORIGINS: []string{"*"},
-		ALLOWED_HEADERS: []string{"Content-Type"},
-		handler:         handler,
+		ALLOWED_METHODS:   []string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"},
+		ALLOWED_ORIGINS:   []string{"*"},
+		ALLOWED_HEADERS:   []string{"Content-Type"},
+		ALLOW_CREDENTIALS: "true",
+		handler:           handler,
 	}
-}
-func (cors *CorsHandler) init() {
-	cors.ALLOWED_METHODS = []string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"}
-	cors.ALLOWED_ORIGINS = []string{"*"}
-	cors.ALLOWED_HEADERS = []string{"Content-Type"}
 }
 func (cors *CorsHandler) AllowOrigin(origin string) {
 	if origin == "*" {
@@ -54,6 +51,13 @@ func (cors *CorsHandler) AllowHeader(header string) {
 	}
 	cors.ALLOWED_HEADERS = append(cors.ALLOWED_HEADERS, header)
 
+}
+func (cors *CorsHandler) AllowCredentials(creds bool) {
+	if creds {
+		cors.ALLOW_CREDENTIALS = "true"
+	} else {
+		cors.ALLOW_CREDENTIALS = "false"
+	}
 }
 func (cors *CorsHandler) RemoveOrigin(origin string) {
 	for i := 0; i < len(cors.ALLOWED_ORIGINS); i++ {
@@ -133,6 +137,7 @@ func (cors *CorsHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", origin)
 		w.Header().Add("Access-Control-Allow-Methods", cors.AllowedMethods())
 		w.Header().Add("Access-Control-Allow-Headers", cors.AllowedHeaders())
+		w.Header().Add("Access-Control-Allow-Credentials", string(cors.ALLOW_CREDENTIALS))
 	}
 	cors.handler.ServeHTTP(w, req)
 }
