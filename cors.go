@@ -10,6 +10,7 @@ type CorsHandler struct {
 	ALLOWED_METHODS   []string
 	ALLOWED_ORIGINS   []string
 	ALLOWED_HEADERS   []string
+	EXPOSED_HEADERS   []string
 	ALLOW_CREDENTIALS string
 	MAX_AGE           float64
 	handler           http.Handler
@@ -20,6 +21,7 @@ func New(handler http.Handler) *CorsHandler {
 		ALLOWED_METHODS:   []string{"GET", "POST", "PUT", "DELETE", "HEAD", "OPTIONS"},
 		ALLOWED_ORIGINS:   []string{"*"},
 		ALLOWED_HEADERS:   []string{"Content-Type"},
+		EXPOSED_HEADERS:   []string{"Content-Type"},
 		ALLOW_CREDENTIALS: "true",
 		MAX_AGE:           0,
 		handler:           handler,
@@ -54,6 +56,16 @@ func (cors *CorsHandler) AllowHeader(header string) {
 	cors.ALLOWED_HEADERS = append(cors.ALLOWED_HEADERS, header)
 
 }
+
+func (cors *CorsHandler) ExposeHeader(header string) {
+	for _, exposedHeader := range cors.EXPOSED_HEADERS {
+		if header == exposedHeader {
+			return
+		}
+	}
+	cors.EXPOSED_HEADERS = append(cors.EXPOSED_HEADERS, header)
+}
+
 func (cors *CorsHandler) AllowCredentials(creds bool) {
 	if creds {
 		cors.ALLOW_CREDENTIALS = "true"
@@ -84,6 +96,15 @@ func (cors *CorsHandler) RemoveHeader(header string) {
 		}
 	}
 }
+
+func (cors *CorsHandler) RemoveExposedHeader(header string) {
+	for i, elem := range cors.EXPOSED_HEADERS {
+		if header == elem {
+			cors.EXPOSED_HEADERS = cors.EXPOSED_HEADERS[:i+copy(cors.EXPOSED_HEADERS[i:], cors.EXPOSED_HEADERS[i+1:])]
+		}
+	}
+}
+
 func (cors *CorsHandler) IsOriginAllowed(origin string) bool {
 	for i := 0; i < len(cors.ALLOWED_ORIGINS); i++ {
 		if "*" == cors.ALLOWED_ORIGINS[i] {
@@ -133,6 +154,19 @@ func (cors *CorsHandler) AllowedHeaders() string {
 	}
 	return headers
 }
+
+func (cors *CorsHandler) ExposedHeaders() string {
+	headers := ""
+	for _, header := range cors.EXPOSED_HEADERS {
+		if headers == "" {
+			headers = header
+		} else {
+			headers = fmt.Sprintf("%s, %s", headers, header)
+		}
+	}
+	return headers
+}
+
 func (cors *CorsHandler) SetMaxAge(age float64) {
 	cors.MAX_AGE = age
 }
@@ -142,6 +176,7 @@ func (cors *CorsHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		w.Header().Add("Access-Control-Allow-Origin", origin)
 		w.Header().Add("Access-Control-Allow-Methods", cors.AllowedMethods())
 		w.Header().Add("Access-Control-Allow-Headers", cors.AllowedHeaders())
+		w.Header().Add("Access-Control-Expose-Headers", cors.ExposedHeaders())
 		w.Header().Add("Access-Control-Allow-Credentials", cors.ALLOW_CREDENTIALS)
 		if cors.MAX_AGE > 0 {
 			w.Header().Add("Access-Control-Max-Age", fmt.Sprintf("%9.f", cors.MAX_AGE))
